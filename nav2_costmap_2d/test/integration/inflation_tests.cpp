@@ -125,15 +125,16 @@ void TestNode::validatePointInflation(
   bool * seen = new bool[costmap->getSizeInCellsX() * costmap->getSizeInCellsY()];
   memset(seen, false, costmap->getSizeInCellsX() * costmap->getSizeInCellsY() * sizeof(bool));
   std::map<double, std::vector<CellData>> m;
-  CellData initial(costmap->getIndex(mx, my), mx, my, mx, my);
+  CellData initial(mx, my, mx, my);
   m[0].push_back(initial);
   for (std::map<double, std::vector<CellData>>::iterator bin = m.begin();
     bin != m.end(); ++bin)
   {
     for (unsigned int i = 0; i < bin->second.size(); ++i) {
       const CellData cell = bin->second[i];
-      if (!seen[cell.index_]) {
-        seen[cell.index_] = true;
+      const auto index = costmap->getIndex(cell.x_, cell.y_);
+      if (!seen[index]) {
+        seen[index] = true;
         unsigned int dx = (cell.x_ > cell.src_x_) ? cell.x_ - cell.src_x_ : cell.src_x_ - cell.x_;
         unsigned int dy = (cell.y_ > cell.src_y_) ? cell.y_ - cell.src_y_ : cell.src_y_ - cell.y_;
         double dist = std::hypot(dx, dy);
@@ -152,23 +153,19 @@ void TestNode::validatePointInflation(
         }
 
         if (cell.x_ > 0) {
-          CellData data(costmap->getIndex(cell.x_ - 1, cell.y_),
-            cell.x_ - 1, cell.y_, cell.src_x_, cell.src_y_);
+          CellData data(cell.x_ - 1, cell.y_, cell.src_x_, cell.src_y_);
           m[dist].push_back(data);
         }
         if (cell.y_ > 0) {
-          CellData data(costmap->getIndex(cell.x_, cell.y_ - 1),
-            cell.x_, cell.y_ - 1, cell.src_x_, cell.src_y_);
+          CellData data(cell.x_, cell.y_ - 1, cell.src_x_, cell.src_y_);
           m[dist].push_back(data);
         }
         if (cell.x_ < costmap->getSizeInCellsX() - 1) {
-          CellData data(costmap->getIndex(cell.x_ + 1, cell.y_),
-            cell.x_ + 1, cell.y_, cell.src_x_, cell.src_y_);
+          CellData data(cell.x_ + 1, cell.y_, cell.src_x_, cell.src_y_);
           m[dist].push_back(data);
         }
         if (cell.y_ < costmap->getSizeInCellsY() - 1) {
-          CellData data(costmap->getIndex(cell.x_, cell.y_ + 1),
-            cell.x_, cell.y_ + 1, cell.src_x_, cell.src_y_);
+          CellData data(cell.x_, cell.y_ + 1, cell.src_x_, cell.src_y_);
           m[dist].push_back(data);
         }
       }
@@ -183,7 +180,7 @@ void TestNode::initNode(std::vector<rclcpp::Parameter> parameters)
   options.parameter_overrides(parameters);
 
   node_ = std::make_shared<nav2_util::LifecycleNode>(
-    "inflation_test_node", "", false, options);
+    "inflation_test_node", "", options);
 
   // Declare non-plugin specific costmap parameters
   node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
@@ -267,7 +264,7 @@ TEST_F(TestNode, testInflationShouldNotCreateUnknowns)
   EXPECT_EQ(countValues(*costmap, nav2_costmap_2d::NO_INFORMATION), 0u);
 }
 
-TEST_F(TestNode, testInflationInUnkown)
+TEST_F(TestNode, testInflationInUnknown)
 {
   std::vector<rclcpp::Parameter> parameters;
   // Set cost_scaling_factor parameter to 1.0 for inflation layer
@@ -302,7 +299,7 @@ TEST_F(TestNode, testInflationInUnkown)
   EXPECT_EQ(countValues(*costmap, nav2_costmap_2d::NO_INFORMATION), 4u);
 }
 
-TEST_F(TestNode, testInflationAroundUnkown)
+TEST_F(TestNode, testInflationAroundUnknown)
 {
   auto inflation_radius = 4.1;
   std::vector<rclcpp::Parameter> parameters;

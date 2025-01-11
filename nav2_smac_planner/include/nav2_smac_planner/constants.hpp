@@ -22,20 +22,17 @@ namespace nav2_smac_planner
 enum class MotionModel
 {
   UNKNOWN = 0,
-  VON_NEUMANN = 1,
-  MOORE = 2,
-  DUBIN = 3,
-  REEDS_SHEPP = 4,
-  STATE_LATTICE = 5,
+  TWOD = 1,
+  DUBIN = 2,
+  REEDS_SHEPP = 3,
+  STATE_LATTICE = 4,
 };
 
 inline std::string toString(const MotionModel & n)
 {
   switch (n) {
-    case MotionModel::VON_NEUMANN:
-      return "Von Neumann";
-    case MotionModel::MOORE:
-      return "Moore";
+    case MotionModel::TWOD:
+      return "2D";
     case MotionModel::DUBIN:
       return "Dubin";
     case MotionModel::REEDS_SHEPP:
@@ -49,10 +46,8 @@ inline std::string toString(const MotionModel & n)
 
 inline MotionModel fromString(const std::string & n)
 {
-  if (n == "VON_NEUMANN") {
-    return MotionModel::VON_NEUMANN;
-  } else if (n == "MOORE") {
-    return MotionModel::MOORE;
+  if (n == "2D") {
+    return MotionModel::TWOD;
   } else if (n == "DUBIN") {
     return MotionModel::DUBIN;
   } else if (n == "REEDS_SHEPP") {
@@ -64,11 +59,11 @@ inline MotionModel fromString(const std::string & n)
   }
 }
 
-const float UNKNOWN = 255.0;
-const float OCCUPIED = 254.0;
-const float INSCRIBED = 253.0;
-const float MAX_NON_OBSTACLE = 252.0;
-const float FREE = 0;
+const float UNKNOWN_COST = 255.0;
+const float OCCUPIED_COST = 254.0;
+const float INSCRIBED_COST = 253.0;
+const float MAX_NON_OBSTACLE_COST = 252.0;
+const float FREE_COST = 0;
 
 }  // namespace nav2_smac_planner
 

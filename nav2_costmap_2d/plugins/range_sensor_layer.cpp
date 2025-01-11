@@ -130,6 +130,7 @@ void RangeSensorLayer::onInitialize()
 
   // Traverse the topic names list subscribing to all of them with the same callback method
   for (auto & topic_name : topic_names) {
+    topic_name = joinWithParentNamespace(topic_name);
     if (input_sensor_type == InputSensorType::VARIABLE) {
       processRangeMessageFunc_ = std::bind(
         &RangeSensorLayer::processVariableRangeMsg, this,
@@ -293,7 +294,9 @@ void RangeSensorLayer::updateCostmap(
   in.header.frame_id = range_message.header.frame_id;
 
   if (!tf_->canTransform(
-      in.header.frame_id, global_frame_, tf2_ros::fromMsg(in.header.stamp)))
+      in.header.frame_id, global_frame_,
+      tf2_ros::fromMsg(in.header.stamp),
+      tf2_ros::fromRclcpp(transform_tolerance_)))
   {
     RCLCPP_INFO(
       logger_, "Range sensor layer can't transform from %s to %s",
@@ -520,7 +523,7 @@ void RangeSensorLayer::updateCosts(
 
 void RangeSensorLayer::reset()
 {
-  RCLCPP_DEBUG(logger_, "Reseting range sensor layer...");
+  RCLCPP_DEBUG(logger_, "Resetting range sensor layer...");
   deactivate();
   resetMaps();
   was_reset_ = true;

@@ -24,13 +24,9 @@
 #include "rclcpp/rclcpp.hpp"
 #include "pluginlib/class_loader.hpp"
 #include "pluginlib/class_list_macros.hpp"
-#include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_core/controller.hpp"
-#include "nav2_core/exceptions.hpp"
-#include "nav2_util/node_utils.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 #include "nav2_costmap_2d/footprint_collision_checker.hpp"
-#include "angles/angles.h"
 
 namespace nav2_rotation_shim_controller
 {
@@ -61,8 +57,8 @@ public:
    */
   void configure(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-    std::string name, const std::shared_ptr<tf2_ros::Buffer> & tf,
-    const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> & costmap_ros) override;
+    std::string name, std::shared_ptr<tf2_ros::Buffer> tf,
+    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**
    * @brief Cleanup controller state machine
@@ -116,6 +112,13 @@ protected:
   geometry_msgs::msg::PoseStamped getSampledPathPt();
 
   /**
+   * @brief Find the goal point in path
+   * May throw exception if the path is empty
+   * @return pt location of the output point
+   */
+  geometry_msgs::msg::PoseStamped getSampledPathGoal();
+
+  /**
    * @brief Uses TF to find the location of the sampled path point in base frame
    * @param pt location of the sampled path point
    * @return location of the pose in base frame
@@ -146,6 +149,13 @@ protected:
     const geometry_msgs::msg::PoseStamped & pose);
 
   /**
+   * @brief Checks if the goal has changed based on the given path.
+   * @param path The path to compare with the current goal.
+   * @return True if the goal has changed, false otherwise.
+   */
+  bool isGoalChanged(const nav_msgs::msg::Path & path);
+
+  /**
    * @brief Callback executed when a parameter change is detected
    * @param event ParameterEvent message
    */
@@ -165,9 +175,10 @@ protected:
   nav2_core::Controller::Ptr primary_controller_;
   bool path_updated_;
   nav_msgs::msg::Path current_path_;
-  double forward_sampling_distance_, angular_dist_threshold_;
+  double forward_sampling_distance_, angular_dist_threshold_, angular_disengage_threshold_;
   double rotate_to_heading_angular_vel_, max_angular_accel_;
   double control_duration_, simulate_ahead_time_;
+  bool rotate_to_goal_heading_, in_rotation_, rotate_to_heading_once_;
 
   // Dynamic parameters handler
   std::mutex mutex_;

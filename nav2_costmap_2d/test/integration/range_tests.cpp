@@ -115,6 +115,7 @@ public:
   : node_(std::make_shared<TestLifecycleNode>("range_test_node")),
     tf_(node_->get_clock())
   {
+    tf_.setUsingDedicatedThread(true);
     // Standard non-plugin specific parameters
     node_->declare_parameter("map_topic", rclcpp::ParameterValue(std::string("map")));
     node_->declare_parameter("track_unknown_space", rclcpp::ParameterValue(false));
@@ -186,7 +187,7 @@ TEST_F(TestNode, testClearingAtMaxRange) {
 }
 
 // Testing fixed scan with robot forward motion
-TEST_F(TestNode, testProbabalisticModelForward) {
+TEST_F(TestNode, testProbabilisticModelForward) {
   geometry_msgs::msg::TransformStamped transform;
   transform.header.stamp = node_->now();
   transform.header.frame_id = "frame";
@@ -239,7 +240,7 @@ TEST_F(TestNode, testProbabalisticModelForward) {
 }
 
 // Testing fixed motion with downward movement
-TEST_F(TestNode, testProbabalisticModelDownward) {
+TEST_F(TestNode, testProbabilisticModelDownward) {
   geometry_msgs::msg::TransformStamped transform;
   transform.header.stamp = node_->now();
   transform.header.frame_id = "frame";

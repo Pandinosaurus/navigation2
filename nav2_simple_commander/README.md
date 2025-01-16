@@ -10,9 +10,11 @@ This was built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41
 
 ## API
 
-See its [API Guide Page](https://navigation.ros.org/commander_api/index.html) for additional parameter descriptions.
+See its [API Guide Page](https://docs.nav2.org/commander_api/index.html) for additional parameter descriptions.
 
 The methods provided by the basic navigator are shown below, with inputs and expected returns. If a server fails, it may throw an exception or return a `None` object, so please be sure to properly wrap your navigation calls in try/catch and check results for `None` type.
+
+New as of September 2023: the simple navigator constructor will accept a `namespace` field to support multi-robot applications or namespaced Nav2 launches.
 
 | Robot Navigator Method            | Description                                                                |
 | --------------------------------- | -------------------------------------------------------------------------- |
@@ -21,8 +23,8 @@ The methods provided by the basic navigator are shown below, with inputs and exp
 | goToPose(pose, behavior_tree='')  | Requests the robot to drive to a pose (`PoseStamped`).                     |
 | followWaypoints(poses)            | Requests the robot to follow a set of waypoints (list of `PoseStamped`). This will execute the specific `TaskExecutor` at each pose.   |
 | followPath(path, controller_id='', goal_checker_id='') | Requests the robot to follow a path from a starting to a goal `PoseStamped`, `nav_msgs/Path`.     |
-| spin(spin_dist=1.57, time_allowance=10)   | Requests the robot to performs an in-place rotation by a given angle.      |
-| backup(backup_dist=0.15, backup_speed=0.025, time_allowance=10) | Requests the robot to back up by a given distance.         |
+| spin(spin_dist=1.57, time_allowance=10, disable_collision_checks=False)   | Requests the robot to performs an in-place rotation by a given angle.      |
+| backup(backup_dist=0.15, backup_speed=0.025, time_allowance=10, disable_collision_checks=False) | Requests the robot to back up by a given distance.         |
 | cancelTask()                       | Cancel an ongoing task request.|
 | isTaskComplete()                   | Checks if task is complete yet, times out at `100ms`.  Returns `True` if completed and `False` if still going.                  |
 | getFeedback()                     | Gets feedback from task, returns action server feedback object. |
@@ -85,14 +87,14 @@ The main benefit of this is automatically showing the above demonstrations in a 
 
 ``` bash
 # Launch the launch file for the demo / example
-ros2 launch nav2_simple_commander demo_security_launch.py
+ros2 launch nav2_simple_commander  security_demo_launch.py
 ```
 
 This will bring up the robot in the AWS Warehouse in a reasonable position, launch the autonomy script, and complete some task to demonstrate the `nav2_simple_commander` API.
 
 ### Manually
 
-The main benefit of this is to be able to launch alternative robot models or different navigation configurations than the default for a specific technology demonstation. As long as Nav2 and the simulation (or physical robot) is running, the simple python commander examples / demos don't care what the robot is or how it got there. Since the examples / demos do contain hard-programmed item locations or routes, you should still utilize the AWS Warehouse. Obviously these are easy to update if you wish to adapt these examples / demos to another environment.
+The main benefit of this is to be able to launch alternative robot models or different navigation configurations than the default for a specific technology demonstration. As long as Nav2 and the simulation (or physical robot) is running, the simple python commander examples / demos don't care what the robot is or how it got there. Since the examples / demos do contain hard-programmed item locations or routes, you should still utilize the AWS Warehouse. Obviously these are easy to update if you wish to adapt these examples / demos to another environment.
 
 ``` bash
 # Terminal 1: launch your robot navigation and simulation (or physical robot). For example

@@ -20,8 +20,9 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-#include "behaviortree_cpp_v3/condition_node.h"
-#include "geometry_msgs/msg/pose_stamped.hpp"
+#include "behaviortree_cpp/condition_node.h"
+#include "geometry_msgs/msg/pose_stamped_array.hpp"
+#include "nav2_behavior_tree/bt_utils.hpp"
 
 
 namespace nav2_behavior_tree
@@ -57,14 +58,19 @@ public:
    */
   static BT::PortsList providedPorts()
   {
-    return {};
+    return {
+      BT::InputPort<geometry_msgs::msg::PoseStampedArray>(
+        "goals", "Vector of navigation goals"),
+      BT::InputPort<geometry_msgs::msg::PoseStamped>(
+        "goal", "Navigation goal"),
+    };
   }
 
 private:
   bool first_time;
   rclcpp::Node::SharedPtr node_;
   geometry_msgs::msg::PoseStamped goal_;
-  std::vector<geometry_msgs::msg::PoseStamped> goals_;
+  geometry_msgs::msg::PoseStampedArray goals_;
 };
 
 }  // namespace nav2_behavior_tree

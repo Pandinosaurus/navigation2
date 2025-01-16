@@ -43,7 +43,7 @@
 #include "nav2_util/geometry_utils.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 
 using rcl_interfaces::msg::ParameterType;
@@ -63,7 +63,8 @@ SimpleGoalChecker::SimpleGoalChecker()
 
 void SimpleGoalChecker::initialize(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-  const std::string & plugin_name)
+  const std::string & plugin_name,
+  const std::shared_ptr<nav2_costmap_2d::Costmap2DROS>/*costmap_ros*/)
 {
   plugin_name_ = plugin_name;
   auto node = parent.lock();

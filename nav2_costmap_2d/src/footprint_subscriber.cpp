@@ -19,7 +19,7 @@
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 
 namespace nav2_costmap_2d
@@ -31,8 +31,7 @@ FootprintSubscriber::FootprintSubscriber(
   tf2_ros::Buffer & tf,
   std::string robot_base_frame,
   double transform_tolerance)
-: topic_name_(topic_name),
-  tf_(tf),
+: tf_(tf),
   robot_base_frame_(robot_base_frame),
   transform_tolerance_(transform_tolerance)
 {
@@ -48,8 +47,7 @@ FootprintSubscriber::FootprintSubscriber(
   tf2_ros::Buffer & tf,
   std::string robot_base_frame,
   double transform_tolerance)
-: topic_name_(topic_name),
-  tf_(tf),
+: tf_(tf),
   robot_base_frame_(robot_base_frame),
   transform_tolerance_(transform_tolerance)
 {

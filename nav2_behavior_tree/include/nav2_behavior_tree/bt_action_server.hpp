@@ -15,6 +15,8 @@
 #ifndef NAV2_BEHAVIOR_TREE__BT_ACTION_SERVER_HPP_
 #define NAV2_BEHAVIOR_TREE__BT_ACTION_SERVER_HPP_
 
+#include <chrono>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -24,6 +26,8 @@
 #include "nav2_behavior_tree/ros_topic_logger.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/simple_action_server.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -40,7 +44,8 @@ public:
   typedef std::function<bool (typename ActionT::Goal::ConstSharedPtr)> OnGoalReceivedCallback;
   typedef std::function<void ()> OnLoopCallback;
   typedef std::function<void (typename ActionT::Goal::ConstSharedPtr)> OnPreemptCallback;
-  typedef std::function<void (typename ActionT::Result::SharedPtr)> OnCompletionCallback;
+  typedef std::function<void (typename ActionT::Result::SharedPtr,
+      nav2_behavior_tree::BtStatus)> OnCompletionCallback;
 
   /**
    * @brief A constructor for nav2_behavior_tree::BtActionServer class
@@ -176,10 +181,11 @@ public:
   /**
    * @brief Function to halt the current tree. It will interrupt the execution of RUNNING nodes
    * by calling their halt() implementation (only for Async nodes that may return RUNNING)
+   * This should already done for all the exit states of the action but preemption
    */
   void haltTree()
   {
-    tree_.rootNode()->halt();
+    tree_.haltTree();
   }
 
 protected:
@@ -187,6 +193,18 @@ protected:
    * @brief Action server callback
    */
   void executeCallback();
+
+  /**
+   * @brief updates the action server result to the highest priority error code posted on the
+   * blackboard
+   * @param result the action server result to be updated
+   */
+  void populateErrorCode(typename std::shared_ptr<typename ActionT::Result> result);
+
+  /**
+   * @brief Setting BT error codes to success. Used to clean blackboard between different BT runs
+   */
+  void cleanErrorCodes();
 
   // Action name
   std::string action_name_;
@@ -200,7 +218,7 @@ protected:
   // The blackboard shared by all of the nodes in the tree
   BT::Blackboard::Ptr blackboard_;
 
-  // The XML file that cointains the Behavior Tree to create
+  // The XML file that contains the Behavior Tree to create
   std::string current_bt_xml_filename_;
   std::string default_bt_xml_filename_;
 
@@ -209,6 +227,9 @@ protected:
 
   // Libraries to pull plugins (BT Nodes) from
   std::vector<std::string> plugin_lib_names_;
+
+  // Error code id names
+  std::vector<std::string> error_code_names_;
 
   // A regular, non-spinning ROS node that we can use for calls to the action client
   rclcpp::Node::SharedPtr client_node_;
@@ -230,6 +251,12 @@ protected:
 
   // Default timeout value while waiting for response from a server
   std::chrono::milliseconds default_server_timeout_;
+
+  // The timeout value for waiting for a service to response
+  std::chrono::milliseconds wait_for_service_timeout_;
+
+  // should the BT be reloaded even if the same xml filename is requested?
+  bool always_reload_bt_xml_ = false;
 
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;

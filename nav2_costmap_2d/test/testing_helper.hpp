@@ -17,6 +17,7 @@
 #define TESTING_HELPER_HPP_
 
 #include <memory>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
@@ -26,6 +27,7 @@
 #include "nav2_costmap_2d/range_sensor_layer.hpp"
 #include "nav2_costmap_2d/obstacle_layer.hpp"
 #include "nav2_costmap_2d/inflation_layer.hpp"
+#include "nav2_costmap_2d/plugin_container_layer.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 
 const double MAX_Z(1.0);
@@ -71,30 +73,33 @@ unsigned int countValues(
 void addStaticLayer(
   nav2_costmap_2d::LayeredCostmap & layers,
   tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node,
-  std::shared_ptr<nav2_costmap_2d::StaticLayer> & slayer)
+  std::shared_ptr<nav2_costmap_2d::StaticLayer> & slayer,
+  rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
 {
   slayer = std::make_shared<nav2_costmap_2d::StaticLayer>();
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(slayer));
-  slayer->initialize(&layers, "static", &tf, node, nullptr, nullptr /*TODO*/);
+  slayer->initialize(&layers, "static", &tf, node, callback_group);
 }
 
 void addObstacleLayer(
   nav2_costmap_2d::LayeredCostmap & layers,
   tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node,
-  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> & olayer)
+  std::shared_ptr<nav2_costmap_2d::ObstacleLayer> & olayer,
+  rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
 {
   olayer = std::make_shared<nav2_costmap_2d::ObstacleLayer>();
-  olayer->initialize(&layers, "obstacles", &tf, node, nullptr, nullptr /*TODO*/);
+  olayer->initialize(&layers, "obstacles", &tf, node, callback_group);
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(olayer));
 }
 
 void addRangeLayer(
   nav2_costmap_2d::LayeredCostmap & layers,
   tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node,
-  std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> & rlayer)
+  std::shared_ptr<nav2_costmap_2d::RangeSensorLayer> & rlayer,
+  rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
 {
   rlayer = std::make_shared<nav2_costmap_2d::RangeSensorLayer>();
-  rlayer->initialize(&layers, "range", &tf, node, nullptr, nullptr /*TODO*/);
+  rlayer->initialize(&layers, "range", &tf, node, callback_group);
   layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(rlayer));
 }
 
@@ -130,13 +135,25 @@ void addObservation(
 void addInflationLayer(
   nav2_costmap_2d::LayeredCostmap & layers,
   tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node,
-  std::shared_ptr<nav2_costmap_2d::InflationLayer> & ilayer)
+  std::shared_ptr<nav2_costmap_2d::InflationLayer> & ilayer,
+  rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
 {
   ilayer = std::make_shared<nav2_costmap_2d::InflationLayer>();
-  ilayer->initialize(&layers, "inflation", &tf, node, nullptr, nullptr /*TODO*/);
+  ilayer->initialize(&layers, "inflation", &tf, node, callback_group);
   std::shared_ptr<nav2_costmap_2d::Layer> ipointer(ilayer);
   layers.addPlugin(ipointer);
 }
 
+void addPluginContainerLayer(
+  nav2_costmap_2d::LayeredCostmap & layers,
+  tf2_ros::Buffer & tf, nav2_util::LifecycleNode::SharedPtr node,
+  std::shared_ptr<nav2_costmap_2d::PluginContainerLayer> & pclayer,
+  std::string name,
+  rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
+{
+  pclayer = std::make_shared<nav2_costmap_2d::PluginContainerLayer>();
+  pclayer->initialize(&layers, name, &tf, node, callback_group);
+  layers.addPlugin(std::shared_ptr<nav2_costmap_2d::Layer>(pclayer));
+}
 
 #endif  // TESTING_HELPER_HPP_

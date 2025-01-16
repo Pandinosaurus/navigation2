@@ -35,7 +35,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 #pragma GCC diagnostic pop
 #include "nav2_util/geometry_utils.hpp"
 
@@ -63,7 +63,12 @@ public:
   void setCostmap(nav2_msgs::msg::Costmap::SharedPtr msg)
   {
     costmap_msg_ = msg;
-    costmap_received_ = true;
+    costmap_ = std::make_shared<nav2_costmap_2d::Costmap2D>(
+      msg->metadata.size_x, msg->metadata.size_y,
+      msg->metadata.resolution, msg->metadata.origin.position.x,
+      msg->metadata.origin.position.y);
+
+    processCurrentCostmapMsg();
   }
 };
 
@@ -73,8 +78,8 @@ public:
   DummyFootprintSubscriber(
     nav2_util::LifecycleNode::SharedPtr node,
     std::string & topic_name,
-    tf2_ros::Buffer & tf_)
-  : FootprintSubscriber(node, topic_name, tf_)
+    tf2_ros::Buffer & tf)
+  : FootprintSubscriber(node, topic_name, tf)
   {}
 
   void setFootprint(geometry_msgs::msg::PolygonStamped::SharedPtr msg)
@@ -88,7 +93,7 @@ class TestCollisionChecker : public nav2_util::LifecycleNode
 {
 public:
   explicit TestCollisionChecker(std::string name)
-  : LifecycleNode(name, "", true),
+  : LifecycleNode(name),
     global_frame_("map")
   {
     // Declare non-plugin specific costmap parameters
@@ -106,10 +111,13 @@ public:
   on_configure(const rclcpp_lifecycle::State & /*state*/)
   {
     RCLCPP_INFO(get_logger(), "Configuring");
+    callback_group_ = create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive, false);
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-      rclcpp_node_->get_node_base_interface(),
-      rclcpp_node_->get_node_timers_interface());
+      get_node_base_interface(),
+      get_node_timers_interface(),
+      callback_group_);
     tf_buffer_->setCreateTimerInterface(timer_interface);
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
     tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(shared_from_this());
@@ -132,15 +140,18 @@ public:
     layers_ = new nav2_costmap_2d::LayeredCostmap("map", false, false);
     // Add Static Layer
     std::shared_ptr<nav2_costmap_2d::StaticLayer> slayer = nullptr;
-    addStaticLayer(*layers_, *tf_buffer_, shared_from_this(), slayer);
+    addStaticLayer(*layers_, *tf_buffer_, shared_from_this(), slayer, callback_group_);
 
     while (!slayer->isCurrent()) {
       rclcpp::spin_some(this->get_node_base_interface());
     }
     // Add Inflation Layer
     std::shared_ptr<nav2_costmap_2d::InflationLayer> ilayer = nullptr;
-    addInflationLayer(*layers_, *tf_buffer_, shared_from_this(), ilayer);
+    addInflationLayer(*layers_, *tf_buffer_, shared_from_this(), ilayer, callback_group_);
 
+    executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+    executor_->add_callback_group(callback_group_, get_node_base_interface());
+    executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
     return nav2_util::CallbackReturn::SUCCESS;
   }
 
@@ -165,6 +176,7 @@ public:
     delete layers_;
     layers_ = nullptr;
 
+    executor_thread_.reset();
     tf_buffer_.reset();
 
     footprint_sub_.reset();
@@ -277,6 +289,10 @@ protected:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
+  rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
+  std::unique_ptr<nav2_util::NodeThread> executor_thread_;
 
   std::shared_ptr<DummyCostmapSubscriber> costmap_sub_;
   std::shared_ptr<DummyFootprintSubscriber> footprint_sub_;
